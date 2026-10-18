@@ -15,7 +15,15 @@ async function start() {
   try {
     const ctx = await createHavenAppContext();
     mountOnboarding(root, ctx);
-    startHavenWorkflow(ctx);
+    const stopWorkflow = startHavenWorkflow(ctx);
+    let disposed = false;
+    const dispose = () => {
+      if (disposed) return;
+      disposed = true;
+      stopWorkflow();
+      void ctx.dispose();
+    };
+    window.addEventListener("pagehide", dispose, { once: true });
     await ctx.devices.startSensorCollection();
     // scripts/sim-smoke.mjs waits for this exact line.
     console.info(READY_MARKER, { apiBaseUrl: ctx.config.apiBaseUrl });
