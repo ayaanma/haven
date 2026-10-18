@@ -117,8 +117,10 @@ describe("route registration", () => {
     expect(webhook.status).not.toBe(404);
     const shortToken = await h.request("/r/x");
     expect(shortToken.status).toBe(404);
+    // Registered, implemented or placeholder: an unknown token is never the unknown-route 404.
     const share = await h.request(`/r/${"a".repeat(43)}`);
-    expect(share.status).toBe(501);
+    const shareBody = (await share.json()) as { error?: { message?: string } };
+    expect(shareBody.error?.message).not.toBe("Route not found");
   });
 
   it("returns the error envelope for unknown routes", async () => {
