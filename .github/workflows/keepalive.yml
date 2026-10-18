@@ -1,0 +1,22 @@
+name: Keep API awake
+
+# Render's free plan sleeps a service after 15 minutes without inbound traffic, which delays the
+# first SOS by about a minute and discards the free instance's disk. A ping every 5 minutes keeps
+# it awake. Remove this workflow on a paid instance (always on, persistent disk).
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: GET /healthz
+        env:
+          HAVEN_API_URL: ${{ vars.HAVEN_API_URL || 'https://haven-api-hwfd.onrender.com' }}
+        run: curl -fsS --retry 3 --retry-delay 20 --max-time 90 "$HAVEN_API_URL/healthz"
