@@ -19,6 +19,8 @@ const alertId = fixtureId("alt");
 const settle = async () => {
   for (let i = 0; i < 4; i++) await new Promise<void>((resolve) => setImmediate(resolve));
 };
+/** Upload/finalize retry backoffs (250 ms, then 500 ms) are the only timers this short. */
+const RETRY_BACKOFFS_MS = new Set([250, 500]);
 describe("G2 emergency microphone and uploader", () => {
   let bridge: FakeBridge;
   let scheduler: ManualScheduler;
@@ -36,6 +38,21 @@ describe("G2 emergency microphone and uploader", () => {
   let acceptedCount: number;
   let requestPaths: string[];
   let makeService: () => HavenAudioService;
+  let retryTimers: number;
+  let firedRetries: number;
+  /**
+   * Waits in real time until the uploader schedules its next retry backoff, then fires it.
+   * Hashing (crypto.subtle) runs off-thread, so a fixed number of ticks races on slow CI.
+   */
+  async function fireNextRetry() {
+    const deadline = Date.now() + 4_000;
+    while (retryTimers <= firedRetries && Date.now() < deadline) {
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
+    firedRetries++;
+    scheduler.advance(500);
+    await settle();
+  }
   function frame(bytes = new Uint8Array(3200), source = AudioInputSource.Glasses) {
     bridge.emit({ audioEvent: new AudioEvent({ audioPcm: bytes, source }) });
   }
@@ -43,6 +60,13 @@ describe("G2 emergency microphone and uploader", () => {
     vi.stubGlobal("indexedDB", fakeAudioIndexedDB().factory);
     bridge = new FakeBridge();
     scheduler = new ManualScheduler();
+    retryTimers = 0;
+    firedRetries = 0;
+    const schedule = scheduler.setTimeout.bind(scheduler);
+    vi.spyOn(scheduler, "setTimeout").mockImplementation((callback, delayMs) => {
+      if (RETRY_BACKOFFS_MS.has(delayMs)) retryTimers++;
+      return schedule(callback, delayMs);
+    });
     uploads = [];
     completions = [];
     progress = [];
@@ -148,9 +172,10 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     scheduler.advance(1000);
-    await settle();
-    expect(progress.some((p) => p.elapsedMs === 1000 && p.phase === "recording")).toBe(true);
-    expect(uploads).toHaveLength(1);
+    await vi.waitFor(() => {
+      expect(progress.some((p) => p.elapsedMs === 1000 && p.phase === "recording")).toBe(true);
+      expect(uploads).toHaveLength(1);
+    });
     expect(completions).toHaveLength(0);
     frame();
     const result = await service.stopAndSendRecording(alertId);
@@ -236,12 +261,9 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     const pending = service.stopAndSendRecording(alertId);
-    await settle();
-    scheduler.advance(250);
-    await settle();
+    await fireNextRetry();
     failUploads = false;
-    scheduler.advance(500);
-    await settle();
+    await fireNextRetry();
     expect(await pending).toMatchObject({ ok: true });
     expect(uploads).toHaveLength(1);
     expect(uploads[0]?.index).toBe(0);
@@ -252,11 +274,8 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     const pending = service.stopAndSendRecording(alertId);
-    await settle();
-    scheduler.advance(250);
-    await settle();
-    scheduler.advance(500);
-    await settle();
+    await fireNextRetry();
+    await fireNextRetry();
     expect(await pending).toMatchObject({ ok: false, reason: "upload_failed", retryable: true });
     expect(completions).toHaveLength(0);
     expect(progress.at(-1)?.pendingChunks).toBe(1);
@@ -274,11 +293,8 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     const pending = service.stopAndSendRecording(alertId);
-    await settle();
-    scheduler.advance(250);
-    await settle();
-    scheduler.advance(500);
-    await settle();
+    await fireNextRetry();
+    await fireNextRetry();
     expect(await pending).toMatchObject({ ok: false, reason: "finalize_failed", retryable: true });
     failFinalization = false;
     expect((await service.stopAndSendRecording(alertId)).ok).toBe(true);
@@ -317,9 +333,10 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     scheduler.advance(5000);
-    await settle();
-    expect(progress.at(-1)?.phase).toBe("failed");
-    expect(bridge.audioCalls.filter((c) => !c.isOpen).length).toBeGreaterThan(0);
+    await vi.waitFor(() => {
+      expect(progress.at(-1)?.phase).toBe("failed");
+      expect(bridge.audioCalls.filter((c) => !c.isOpen).length).toBeGreaterThan(0);
+    });
     expect((await service.stopAndSendRecording(alertId)).ok).toBe(true);
   });
 
@@ -403,8 +420,9 @@ describe("G2 emergency microphone and uploader", () => {
     await settle();
     expect(await starting).toMatchObject({ ok: false, reason: "bridge_error" });
     open(true);
-    await settle();
-    expect(control.mock.calls.filter((c) => c[0] === false).length).toBeGreaterThanOrEqual(1);
+    await vi.waitFor(() => {
+      expect(control.mock.calls.filter((c) => c[0] === false).length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it("stops on lifecycle exit without sending or reopening on foreground", async () => {
@@ -416,9 +434,10 @@ describe("G2 emergency microphone and uploader", () => {
     bridge.emit({
       sysEvent: new Sys_ItemEvent({ eventType: OsEventTypeList.FOREGROUND_ENTER_EVENT }),
     });
-    await settle();
-    expect(progress.at(-1)?.phase).toBe("failed");
-    expect(bridge.audioCalls.filter((c) => c.isOpen)).toHaveLength(1);
+    await vi.waitFor(() => {
+      expect(progress.at(-1)?.phase).toBe("failed");
+      expect(bridge.audioCalls.filter((c) => c.isOpen)).toHaveLength(1);
+    });
     expect(completions).toHaveLength(0);
     expect((await service.stopAndSendRecording(alertId)).ok).toBe(true);
   });
@@ -432,8 +451,7 @@ describe("G2 emergency microphone and uploader", () => {
     await service.startRecording(alertId);
     frame();
     onDevice(new DeviceStatus({ sn: "test", connectType: DeviceConnectType.Disconnected }));
-    await settle();
-    expect(progress.at(-1)?.phase).toBe("failed");
+    await vi.waitFor(() => expect(progress.at(-1)?.phase).toBe("failed"));
   });
 
   it("disposes without finalizing or notifying and releases event subscriptions", async () => {
