@@ -85,11 +85,10 @@ the Even Hub developer portal.
 1. `GET https://<your-api-host>/healthz` → `{"status":"ok","photonMode":"live",...}`.
 2. Pair the phone, add one consenting tester. With shared lines, their contact row shows the
    number to text; ask them to text it.
-3. **Webhook signature (required once).** Photon has not documented its signature headers;
-   Haven verifies the Standard Webhooks scheme and rejects anything else. In the API logs:
-   - `"webhook handled"` → verification works; the tester shows as verified.
-   - `"webhook rejected"` → the log lists the signature header names Photon sent; adjust
-     `apps/api/src/photon/signature.ts` to match, redeploy, and have the tester text again.
+3. **Webhook check.** After the tester texts, the API logs show `"webhook handled"` and the
+   tester shows as verified. (Photon's Standard Webhooks signatures were verified against a
+   real delivery on 2026-10-18.) `"webhook rejected"` means the secret on the server does not
+   match the destination's: copy it again or rotate it.
 4. Trigger an SOS on the glasses (HARDWARE_TEST_PLAN H12): the tester receives the SOS, the HUD
    shows "SOS sent" and starts recording, the recording link arrives, and their reply shows on
    the HUD.

@@ -157,18 +157,18 @@ proposed through the foundation.
 
 Hackathon-grade, single wearer per deployment. **Not an audited identity system.**
 
-| Concern          | Mechanism                                                                                                | Limits                                                                           |
-| ---------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Enrollment       | `HAVEN_PAIRING_CODE` → `POST /auth/session`; constant-time compare; 10 attempts / 5 min / IP             | One shared code; no per-user accounts                                            |
-| Sessions         | 256-bit random `hvn_` bearer token, only SHA-256 stored, 30-day expiry, scopes                           | No refresh or rotation UI; revocation only via DB                                |
-| Authorization    | `auth.require(scope)` on contacts, alerts, events, audio                                                 | All wearer scopes are granted together                                           |
-| Recording access | 256-bit capability URL `/r/:token`, hashed at rest, 7-day expiry, `no-store`, `noindex`                  | Anyone holding the link can listen, by design, so contacts need no login         |
-| Webhooks         | Signature verification with `PHOTON_WEBHOOK_SECRET` (`whsec_...`) and event-ID dedupe                    | Photon's signature scheme is not documented in Beta docs: verify before trusting |
-| Secrets          | Photon and Gemini keys only in the server env; config summary logs presence flags, not values            | `.env` must never be committed                                                   |
-| Transport        | HTTPS required for `PUBLIC_BASE_URL` in live mode; app.json whitelist set to the API origin at pack time | Local dev uses HTTP on the LAN                                                   |
-| CORS             | Bearer tokens, no cookies, so `ALLOWED_ORIGINS=*` exposes no credentials; an allowlist is supported      | The packaged WebView origin is undocumented (HARDWARE_TEST_PLAN H11)             |
-| Logging          | JSON logs with key-based redaction of phone, coordinates, text, tokens, secrets                          | Redaction is by key name; do not log PII under other keys                        |
-| Abuse limits     | 64 KB JSON bodies, 256 KB audio chunks, 1 MB webhooks                                                    | No global rate limiting beyond pairing                                           |
+| Concern          | Mechanism                                                                                                | Limits                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Enrollment       | `HAVEN_PAIRING_CODE` → `POST /auth/session`; constant-time compare; 10 attempts / 5 min / IP             | One shared code; no per-user accounts                                          |
+| Sessions         | 256-bit random `hvn_` bearer token, only SHA-256 stored, 30-day expiry, scopes                           | No refresh or rotation UI; revocation only via DB                              |
+| Authorization    | `auth.require(scope)` on contacts, alerts, events, audio                                                 | All wearer scopes are granted together                                         |
+| Recording access | 256-bit capability URL `/r/:token`, hashed at rest, 7-day expiry, `no-store`, `noindex`                  | Anyone holding the link can listen, by design, so contacts need no login       |
+| Webhooks         | Signature verification with `PHOTON_WEBHOOK_SECRET` (`whsec_...`) and event-ID dedupe                    | Standard Webhooks scheme, verified against a real Photon delivery (2026-10-18) |
+| Secrets          | Photon and Gemini keys only in the server env; config summary logs presence flags, not values            | `.env` must never be committed                                                 |
+| Transport        | HTTPS required for `PUBLIC_BASE_URL` in live mode; app.json whitelist set to the API origin at pack time | Local dev uses HTTP on the LAN                                                 |
+| CORS             | Bearer tokens, no cookies, so `ALLOWED_ORIGINS=*` exposes no credentials; an allowlist is supported      | The packaged WebView origin is undocumented (HARDWARE_TEST_PLAN H11)           |
+| Logging          | JSON logs with key-based redaction of phone, coordinates, text, tokens, secrets                          | Redaction is by key name; do not log PII under other keys                      |
+| Abuse limits     | 64 KB JSON bodies, 256 KB audio chunks, 1 MB webhooks                                                    | No global rate limiting beyond pairing                                         |
 
 ## Integrations
 
@@ -246,8 +246,8 @@ Verified on 2026-10-18 against installed packages, the simulator, and official d
 - **Background**: Haven works only while it is the active plugin. Android can suspend the
   WebView under memory pressure (state, mic, location, and sockets are lost); iOS keeps it running.
 - **No audio output** and no custom fonts or colors on the glasses (SDK docs): all feedback is text.
-- **Photon 2.0 Beta**: the webhook signature header and algorithm are not in the Beta docs (the
-  secret has a `whsec_` prefix). The client package is days old (0.5.0, 2026-10-16), so expect churn.
+- **Photon 2.0 Beta**: webhooks are signed with the Standard Webhooks scheme (`whsec_` secret,
+  `webhook-signature` header), verified against a real delivery on 2026-10-18. The client package is days old (0.5.0, 2026-10-16), so expect churn.
 - **Gemini 2.5 Flash-Lite**: Google's Gemini API deprecations page lists no shutdown date for
   `gemini-2.5-flash-lite`, but says access to 2.5 models is limited to users who used them
   before, so a key from a new project may be rejected (reported as a 404). Third-party reports say
