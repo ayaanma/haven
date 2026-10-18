@@ -182,7 +182,12 @@ export function describeConfig(config: HavenConfig): Record<string, unknown> {
       platform: config.photon.platform,
       lineMode: config.photon.lineMode,
       projectId: config.photon.projectId ?? null,
-      credentialsConfigured: Boolean(config.photon.apiKey && config.photon.agentUserId),
+      // Shared lines learn each contact's agent from their opt-in; only dedicated lines need one.
+      credentialsConfigured: Boolean(
+        config.photon.apiKey &&
+        config.photon.projectId &&
+        (config.photon.lineMode === "shared" || config.photon.agentUserId),
+      ),
       webhookSigningConfigured: Boolean(config.photon.webhookSecret),
     },
     llm: {

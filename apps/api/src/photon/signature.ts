@@ -1,10 +1,8 @@
 // Photon webhook signature verification.
 //
-// UNVERIFIED ASSUMPTION: Photon 2.0 Beta documents only that webhook signing secrets start
-// with `whsec_` (CreateWebhookDestinationResponse.signingSecret) and that rotation keeps
-// the previous secret valid for an overlap window. It does not document the header names or
-// algorithm. `whsec_` secrets with overlapping rotation are the Standard Webhooks scheme
-// (https://www.standardwebhooks.com), so that is what Haven verifies:
+// Photon 2.0 signs webhooks with the Standard Webhooks scheme (https://www.standardwebhooks.com).
+// Its public docs only mention the `whsec_` secret and the `webhook-signature` header, but a
+// real production delivery (2026-10-18, event message.received) verified with this code:
 //
 //   webhook-id:        unique delivery ID
 //   webhook-timestamp: Unix seconds
@@ -13,9 +11,7 @@
 //   key:               base64-decoded part of the secret after `whsec_`
 //
 // `svix-*` header names (same scheme) are accepted too. Anything else is rejected: the
-// handler fails closed, so a different real scheme shows up as 401s, with the received
-// header names logged, rather than as accepted forgeries. Confirm against a real delivery
-// before relying on live replies (HARDWARE_TEST_PLAN H12).
+// handler fails closed, and a rejected request logs the header names it received.
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /** Accept timestamps this far from the server clock in either direction (replay window). */

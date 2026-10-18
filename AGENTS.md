@@ -79,7 +79,7 @@ Source of truth: [`scripts/ownership.mjs`](scripts/ownership.mjs). `npm run chec
 - IMU `x/y/z` units and axis orientation are **undocumented**. Treat them as raw SDK units.
 - **Photon 2.0 Beta** (`https://api.photon.codes/v1`, Bearer `pho_sk_...`). A shared iMessage
   line can only message people who messaged it first. Send returns 202 with status `dispatched`.
-  The webhook signature header format is **not documented**; verify it against a real delivery.
+  Webhooks use Standard Webhooks signatures (`webhook-id`/`webhook-timestamp`/`webhook-signature`), verified against a real delivery on 2026-10-18.
 - `gemini-2.5-flash-lite` has no announced Gemini API shutdown date, but Google limits 2.5 models
   to projects that used them before. A new API key may get 404, in which case the SOS still works
   without AI context.
