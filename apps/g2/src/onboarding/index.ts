@@ -76,14 +76,14 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
           pairingCode: code.value,
           ...(label.value.trim() ? { deviceLabel: label.value.trim() } : {}),
         })
-        .then(() => renderContacts())
+        .then(() => renderContacts("Paired. Add your emergency contacts below."))
         .catch(showError)
         .finally(() => setBusy(submit, false, "Pair G2"));
     });
     root.append(form);
   };
 
-  const renderContacts = async () => {
+  const renderContacts = async (notice = "") => {
     root.replaceChildren(element("h1", "Haven"), status);
     status.textContent = "Loading emergency contacts...";
     let contacts: EmergencyContact[];
@@ -92,11 +92,11 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
     } catch (error) {
       showError(error);
       const retry = element("button", "Retry");
-      retry.addEventListener("click", () => void renderContacts());
+      retry.addEventListener("click", () => void renderContacts(notice));
       root.append(retry);
       return;
     }
-    status.textContent = "";
+    status.textContent = notice;
     root.append(
       element(
         "p",
@@ -197,15 +197,19 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
       setBusy(save, true, "Save contacts");
       void ctx.api
         .saveContacts(parsed.data.contacts)
-        .then(() => {
-          status.textContent = "Contacts saved.";
-          return renderContacts();
-        })
+        .then(() =>
+          renderContacts(
+            "Contacts saved. Each pending contact must text the number shown below their name.",
+          ),
+        )
         .catch(showError)
         .finally(() => setBusy(save, false, "Save contacts"));
     });
+    const refresh = element("button", "Refresh consent status");
+    refresh.type = "button";
+    refresh.addEventListener("click", () => void renderContacts());
     editor.append(rows, add, save);
-    root.append(editor);
+    root.append(editor, refresh);
 
     const reset = element("button", "Reset error on glasses");
     reset.type = "button";
