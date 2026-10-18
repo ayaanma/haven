@@ -249,6 +249,17 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
     .catch(showError);
 }
 
+/** Shown at launch while Haven waits for the Even App bridge and the glasses. */
+export function mountConnecting(root: HTMLElement): void {
+  root.replaceChildren();
+  const title = document.createElement("h1");
+  title.textContent = "Haven";
+  const note = document.createElement("p");
+  note.textContent =
+    "Connecting to your G2... Keep the glasses on and connected in the Even Realities app.";
+  root.append(title, note);
+}
+
 /** Shown when the Even App bridge is unavailable (plain browser, or startup failed). */
 export function mountBridgeUnavailable(root: HTMLElement, message: string): void {
   root.replaceChildren();

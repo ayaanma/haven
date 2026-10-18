@@ -4,7 +4,7 @@
 // is created (createHavenAppContext does both) before any other glasses call.
 import { createHavenAppContext } from "./core/app-context";
 import { createLog, READY_MARKER } from "./core/log";
-import { mountBridgeUnavailable, mountOnboarding } from "./onboarding";
+import { mountBridgeUnavailable, mountConnecting, mountOnboarding } from "./onboarding";
 import { startHavenWorkflow } from "./workflows";
 
 const log = createLog("main");
@@ -12,6 +12,7 @@ const root = document.querySelector<HTMLElement>("#app");
 
 async function start() {
   if (!root) throw new Error("#app root element missing");
+  mountConnecting(root);
   try {
     const ctx = await createHavenAppContext();
     mountOnboarding(root, ctx);
