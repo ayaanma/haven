@@ -386,14 +386,10 @@ export function createAudioService(deps: AudioServiceDeps): HavenAudioService {
     detach();
     captureStoppedAt ||= deps.scheduler.now();
     if (!closed) {
-      transition("FAILED");
-      await checkpoint();
-      return {
-        ok: false,
-        reason: "finalize_failed",
-        retryable: true,
-        detail: "Microphone stop was not confirmed",
-      };
+      // Our listener is already detached, so nothing more is captured. Send the evidence
+      // anyway (the simulator never confirms a stop) and keep asking the host to close.
+      deps.log.warn("Microphone stop was not confirmed; sending the recording anyway");
+      deps.scheduler.setTimeout(() => void closeMicrophone(), 1000);
     }
     flush();
     if (!current.totalBytes || current.totalBytes % 2) {

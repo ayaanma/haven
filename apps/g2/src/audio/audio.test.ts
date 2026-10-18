@@ -301,6 +301,14 @@ describe("G2 emergency microphone and uploader", () => {
     expect(uploads).toHaveLength(1);
   });
 
+  it("still sends the recording when the host does not confirm the microphone stop", async () => {
+    await service.startRecording(alertId);
+    frame();
+    vi.spyOn(bridge, "audioControl").mockResolvedValue(false);
+    expect(await service.stopAndSendRecording(alertId)).toMatchObject({ ok: true });
+    expect(uploads).toHaveLength(1);
+  });
+
   it("does not claim notification acceptance when the backend accepted none", async () => {
     acceptedCount = 0;
     await service.startRecording(alertId);
