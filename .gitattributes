@@ -1,0 +1,5 @@
+# Normalize line endings so Windows, macOS, and Linux contributors produce identical diffs.
+* text=auto eol=lf
+*.png binary
+*.ehpk binary
+*.wav binary

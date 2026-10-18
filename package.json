@@ -1,0 +1,42 @@
+{
+  "name": "haven",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Haven: a personal safety plugin for the Even Realities G2 glasses.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "workspaces": [
+    "packages/contracts",
+    "apps/api",
+    "apps/g2"
+  ],
+  "engines": {
+    "node": ">=24.11.0",
+    "npm": ">=11"
+  },
+  "scripts": {
+    "dev:api": "npm run dev -w @haven/api",
+    "dev:g2": "npm run dev -w @haven/g2",
+    "sim": "npm run sim -w @haven/g2",
+    "sim:smoke": "npm run sim:smoke -w @haven/g2",
+    "pack:g2": "npm run pack -w @haven/g2",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "npm run build --workspaces --if-present",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "check:ownership": "node scripts/check-ownership.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.5"
+  }
+}

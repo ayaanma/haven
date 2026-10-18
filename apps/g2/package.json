@@ -1,0 +1,28 @@
+{
+  "name": "@haven/g2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Haven Even Hub plugin for the Even Realities G2 glasses.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --project g2",
+    "sim": "evenhub-simulator http://localhost:5173",
+    "sim:smoke": "node scripts/sim-smoke.mjs",
+    "qr": "node scripts/qr.mjs",
+    "pack": "node scripts/pack.mjs"
+  },
+  "dependencies": {
+    "@evenrealities/even_hub_sdk": "0.0.16",
+    "@haven/contracts": "0.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-cli": "0.1.14",
+    "@evenrealities/evenhub-simulator": "0.9.5",
+    "vite": "^8.3.4"
+  }
+}

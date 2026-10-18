@@ -1,0 +1,24 @@
+{
+  "package_id": "com.ayaanma.haven",
+  "edition": "202601",
+  "name": "Haven",
+  "version": "0.1.0",
+  "min_sdk_version": "0.0.16",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Sends your SOS, location, and emergency audio to your Haven server, which messages only your chosen emergency contacts.",
+      "whitelist": ["http://localhost:8787"]
+    },
+    {
+      "name": "location",
+      "desc": "Adds your phone's current location to the emergency message your contacts receive."
+    },
+    {
+      "name": "g2-microphone",
+      "desc": "Records audio from the glasses after an SOS is sent so your emergency contacts can hear what is happening."
+    }
+  ],
+  "supported_languages": ["en"]
+}

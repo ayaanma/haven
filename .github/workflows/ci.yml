@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+      - name: Package .ehpk (validates app.json with the Even Hub CLI)
+        run: npm run pack -w @haven/g2 -- --skip-build
+      - name: Backend boots in mock mode
+        env:
+          HAVEN_PAIRING_CODE: ci-pairing-code
+          DATABASE_PATH: ":memory:"
+          PORT: "8787"
+        run: |
+          node --disable-warning=ExperimentalWarning apps/api/dist/index.js &
+          for i in $(seq 1 30); do curl -sf http://localhost:8787/healthz && exit 0; sleep 0.5; done
+          exit 1
