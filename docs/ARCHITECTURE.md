@@ -139,7 +139,7 @@ updates use `textContainerUpgrade` on that container.
 | Table                            | Owner      | Purpose                                                                        |
 | -------------------------------- | ---------- | ------------------------------------------------------------------------------ |
 | `sessions`                       | foundation | Wearer sessions; SHA-256 of token, scopes, expiry                              |
-| `contacts`                       | Agent 2    | Contacts, consent status, Photon user/space IDs                                |
+| `contacts`                       | Agent 2    | Contacts, consent status, Photon user/space/line IDs, shared-line assignment   |
 | `alerts`                         | Agent 2    | One row per SOS; `client_alert_id UNIQUE` backs idempotency                    |
 | `alert_notifications`            | Agent 2    | Per (alert, contact, kind) message status; contact snapshot; Photon message ID |
 | `alert_events`                   | foundation | Append-only event log; `AUTOINCREMENT` IDs are the cursors                     |
@@ -183,8 +183,13 @@ Hackathon-grade, single wearer per deployment. **Not an audited identity system.
 - `202` = persisted for asynchronous delivery (`status: dispatched`). Terminal statuses arrive as
   webhook events `message.accepted` (accepted, delivery unconfirmed), `message.delivered`, and
   `message.failed`, plus `message.received` for replies.
-- **Shared iMessage lines can send only to peers who messaged the line first.** Haven turns
-  this into explicit consent: a contact's first inbound message marks them `verified`.
+- **Shared iMessage lines can send only to peers who have an Assignment and messaged the line
+  first.** With `PHOTON_LINE_MODE=shared` (default) Haven creates a shared-line Assignment per
+  contact (`POST /projects/{id}/platforms/imessage/assignments`, `platforms:write`); Photon may
+  give each contact a different number, exposed as `EmergencyContact.optInNumber`. A contact's
+  first inbound message marks them `verified` and teaches Haven that line's agent User ID and
+  Space, which become the `senderId`/`spaceId` for their alerts. `dedicated` mode uses one
+  `PHOTON_AGENT_USER_ID` for everyone.
 - Haven does not use Stable/Spectrum APIs (`spectrum-ts`, `spectrum.photon.codes`).
 
 ### Gemini 2.5 Flash-Lite, Agent 3

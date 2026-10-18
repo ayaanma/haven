@@ -14,10 +14,9 @@ appear on the HUD.
 
 Haven never contacts 911 or the police directly. It asks the emergency contacts to call 911.
 
-> **Status: foundation commit.** This commit sets up the shared contracts, wiring, auth,
-> database, test infrastructure, and Even Hub packaging. Four feature agents build the rest in
-> parallel (see [AGENTS.md](AGENTS.md)). Until they land, feature endpoints answer
-> `501 not_implemented` and the G2 app only logs presses.
+> **Status: MVP complete.** SOS workflow and HUD, sensors and AI context, Photon messaging,
+> and audio evidence are all implemented. To run it in production, see
+> [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Quick start
 

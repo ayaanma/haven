@@ -93,15 +93,16 @@ Errors: `400`, `401` (wrong code), `429`. The token is shown once; the server st
 
 `EmergencyContact`:
 
-| Field                    | Type                                 | Notes                                                                 |
-| ------------------------ | ------------------------------------ | --------------------------------------------------------------------- |
-| `id`                     | `ctc_...`                            |                                                                       |
-| `displayName`            | string (1–40, no control characters) | Shown on the HUD for replies                                          |
-| `phoneNumber`            | E.164 (`+14155550123`)               |                                                                       |
-| `enabled`                | boolean                              | Wearer's switch                                                       |
-| `consent.status`         | `pending` \| `verified` \| `revoked` | Server-controlled. Only `enabled && verified` contacts receive alerts |
-| `consent.updatedAt`      | ms \| null                           |                                                                       |
-| `createdAt`, `updatedAt` | ms                                   |                                                                       |
+| Field                    | Type                                 | Notes                                                                   |
+| ------------------------ | ------------------------------------ | ----------------------------------------------------------------------- |
+| `id`                     | `ctc_...`                            |                                                                         |
+| `displayName`            | string (1–40, no control characters) | Shown on the HUD for replies                                            |
+| `phoneNumber`            | E.164 (`+14155550123`)               |                                                                         |
+| `enabled`                | boolean                              | Wearer's switch                                                         |
+| `consent.status`         | `pending` \| `verified` \| `revoked` | Server-controlled. Only `enabled && verified` contacts receive alerts   |
+| `consent.updatedAt`      | ms \| null                           |                                                                         |
+| `optInNumber`            | E.164 \| null                        | Haven number this contact texts to opt in (per contact on shared lines) |
+| `createdAt`, `updatedAt` | ms                                   |                                                                         |
 
 ### `PUT /api/v1/contacts`
 

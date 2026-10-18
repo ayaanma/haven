@@ -17,7 +17,15 @@ export interface OutboundMessage {
   /** Stable per (alert, contact, kind): a resend after a lost response is a replay. */
   idempotencyKey: string;
   text: string;
-  recipient: { contactId: string; phoneNumber: string } & PhotonIdentity;
+  recipient: {
+    contactId: string;
+    phoneNumber: string;
+    /**
+     * Agent User ID of the line this contact uses (learned from their opt-in message). On
+     * shared lines each contact may have a different line; falls back to PHOTON_AGENT_USER_ID.
+     */
+    agentUserId: string | null;
+  } & PhotonIdentity;
 }
 
 /** Message status in Photon's send response (`SentMessageStatus`). */

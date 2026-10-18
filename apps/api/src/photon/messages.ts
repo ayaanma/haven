@@ -64,14 +64,18 @@ function locationBlock(location: LocationFix | null, activatedAt: number): strin
 export interface InitialSosMessageInput {
   activatedAt: number;
   location: LocationFix | null;
+  /** HAVEN_WEARER_NAME; when unset the message cannot name the wearer. */
+  wearerName?: string | undefined;
 }
 
 export function buildInitialSosMessage(input: InitialSosMessageInput): string {
-  // CONTRACT-PROPOSAL: a wearer display name (config or SOS request) so this can say who.
+  const who = input.wearerName
+    ? `${input.wearerName} has activated a Haven emergency alert.`
+    : "The person who added you as their Haven emergency contact has activated an emergency alert.";
   return [
     "HAVEN SOS ALERT",
     "",
-    "The person who added you as their Haven emergency contact has activated an emergency alert. They indicated they may be in danger.",
+    `${who} They indicated they may be in danger.`,
     "",
     "Please call 911 now if emergency help may be needed, and give the dispatcher the location below. Haven has not contacted 911 or the police.",
     "",

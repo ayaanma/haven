@@ -93,6 +93,7 @@ export function makeContact(overrides: Partial<EmergencyContact> = {}): Emergenc
     phoneNumber: "+14155550123",
     enabled: true,
     consent: { status: "verified", updatedAt: FIXTURE_NOW_MS - 86_400_000 },
+    optInNumber: "+16283167976",
     createdAt: FIXTURE_NOW_MS - 172_800_000,
     updatedAt: FIXTURE_NOW_MS - 86_400_000,
     ...overrides,

@@ -35,6 +35,13 @@ export const EmergencyContactSchema = z.object({
     /** When the consent status last changed; null while pending since creation. */
     updatedAt: TimestampMsSchema.nullable(),
   }),
+  /**
+   * The Haven messaging number this contact must text to opt in (and on which they receive
+   * alerts). On Photon shared iMessage lines each contact is assigned their own number, so
+   * show this per contact. Null while it is not known yet (e.g. mock mode, or the line
+   * assignment has not completed).
+   */
+  optInNumber: E164PhoneNumberSchema.nullable().default(null),
   createdAt: TimestampMsSchema,
   updatedAt: TimestampMsSchema,
 });

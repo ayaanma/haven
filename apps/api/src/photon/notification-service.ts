@@ -192,6 +192,7 @@ export function createPhotonNotificationService(
           phoneNumber: row.contact_phone_number,
           userId: contact?.photon_user_id ?? null,
           spaceId: contact?.photon_space_id ?? null,
+          agentUserId: contact?.photon_agent_user_id ?? null,
         },
       });
     } catch (error) {
@@ -293,6 +294,7 @@ export function createPhotonNotificationService(
     const alert = getAlertRow(db, alertId);
     if (!alert) throw notFound("Alert not found");
     return buildInitialSosMessage({
+      wearerName: ctx.config.wearerName,
       activatedAt: alert.activated_at,
       location: alertLocation(alert),
     });

@@ -13,7 +13,7 @@ import {
 import { fixtureUuid, makeContextResult, makeSOSRequest } from "@haven/contracts/testing";
 import { createApp } from "../../app";
 import { buildAlertService } from "../../alerts/service";
-import { createContactsService } from "../../contacts";
+import { buildContactsService, createContactsService } from "../../contacts";
 import { createContainer, type ServiceContainer } from "../../container";
 import { createEventLog, migrate, openDatabase, type Db } from "../../db";
 import type { AppEnv } from "../../lib/hono";
@@ -28,6 +28,7 @@ import {
 } from "../../testing";
 import { signedWebhookRequest } from "../mock-webhook";
 import { createPhotonNotificationService, type RetryPolicy } from "../notification-service";
+import type { PhotonLineService } from "../lines";
 import type { OutboundMessage, PhotonTransport, SendOutcome } from "../transport";
 import type { PhotonWebhookEvent } from "../webhook-events";
 import { createWebhookHandler } from "../webhook-handler";
@@ -115,6 +116,8 @@ export interface PhotonHarnessOptions {
   recoverOnStart?: boolean;
   context?: HavenContextService;
   contextTimeoutMs?: number;
+  /** Photon shared-line assignments (default: the real service for the config). */
+  lines?: PhotonLineService;
 }
 
 /**
@@ -142,9 +145,12 @@ export function createPhotonHarness(options: PhotonHarnessOptions = {}): PhotonH
     ...(options.hourlySendLimit ? { hourlySendLimit: options.hourlySendLimit } : {}),
     recoverOnStart: options.recoverOnStart ?? false,
   });
+  const contacts = options.lines
+    ? buildContactsService(ctx, options.lines)
+    : createContactsService(ctx);
   const alerts = buildAlertService(
     ctx,
-    { contacts: createContactsService(ctx), notifications, context },
+    { contacts, notifications, context },
     {
       ...(options.contextTimeoutMs ? { contextTimeoutMs: options.contextTimeoutMs } : {}),
       recoverOnStart: options.recoverOnStart ?? false,
@@ -154,7 +160,13 @@ export function createPhotonHarness(options: PhotonHarnessOptions = {}): PhotonH
     db,
     clock,
     logger: silentLogger,
-    overrides: { notifications, alerts, context, photonWebhooks: createWebhookHandler(ctx) },
+    overrides: {
+      contacts,
+      notifications,
+      alerts,
+      context,
+      photonWebhooks: createWebhookHandler(ctx),
+    },
   });
   const app = createApp(container);
   const session = container.sessions.exchangePairingCode(TEST_PAIRING_CODE, "vitest");

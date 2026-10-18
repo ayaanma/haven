@@ -135,6 +135,7 @@ const message = (overrides: Partial<OutboundMessage["recipient"]> = {}): Outboun
     phoneNumber: PHONES[0],
     userId: null,
     spaceId: null,
+    agentUserId: null,
     ...overrides,
   },
 });
@@ -182,6 +183,28 @@ describe("live Photon transport", () => {
       content: { type: "text", format: "plain", text: "HAVEN SOS ALERT\n..." },
     });
     expect(send?.headers.get("idempotency-key")).toBe("haven:alt_x:ctc_y:initial_sos");
+  });
+
+  it("sends from the contact's own shared line when it is known", async () => {
+    const photon = fakePhoton();
+    const { PHOTON_AGENT_USER_ID: _agent, ...shared } = LIVE_ENV;
+    const transport = createLivePhotonTransport(testConfig(shared), {
+      fetch: photon.fetch,
+      maxAttempts: 1,
+    });
+    const line = "pho_usr_01k0000000000000000000line";
+    expect(
+      await transport.send(message({ userId: USER, spaceId: SPACE, agentUserId: line })),
+    ).toMatchObject({ ok: true });
+    expect(photon.seen[0]?.body?.senderId).toBe(line);
+
+    // Without a learned line agent (the contact never texted their line) nothing is sent.
+    expect(await transport.send(message())).toMatchObject({
+      ok: false,
+      retryable: false,
+      failureCode: "sender_unknown",
+    });
+    expect(photon.seen).toHaveLength(1);
   });
 
   it("skips the lookups when the identity is cached and reports replays", async () => {
