@@ -232,7 +232,7 @@ describe("Haven SOS workflow", () => {
 });
 
 describe("HUD rendering", () => {
-  it("serializes upgrades and keeps the required copy/provider wording", async () => {
+  it("serializes upgrades and keeps the required copy without provider wording", async () => {
     const bridge = new FakeBridge();
     const hud = createHudRenderer(bridge);
     await hud.render({
@@ -243,12 +243,7 @@ describe("HUD rendering", () => {
       replies: [],
     });
     expect(bridge.textUpgrades.at(-1)?.content).toBe(
-      [
-        HUD_COPY.sosSent,
-        "Accepted by Photon 2/3",
-        `${HUD_COPY.recording} 0:07`,
-        HUD_COPY.recordingHint,
-      ].join("\n"),
+      [HUD_COPY.sosSent, `${HUD_COPY.recording} 0:07`, HUD_COPY.recordingHint].join("\n"),
     );
   });
 

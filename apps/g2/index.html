@@ -13,7 +13,11 @@
           "Segoe UI",
           sans-serif;
       }
+      /* Paint our own background: the Even app WebView can show a light page behind
+         dark-mode (white) text. Canvas/CanvasText always follow color-scheme together. */
       body {
+        background: Canvas;
+        color: CanvasText;
         margin: 0;
         padding: 16px;
         line-height: 1.4;

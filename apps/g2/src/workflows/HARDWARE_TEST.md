@@ -14,7 +14,7 @@ authorized with consenting test contacts.
 4. Let the countdown finish. Confirm exactly one alert is created and the HUD says it is contacting
    emergency contacts; it must not say sent or start audio from the HTTP response alone.
 5. Emit `alert.initial_notification_accepted`. Confirm recording starts once and the HUD says
-   `Accepted by Photon n/m`, not delivered.
+   `SOS sent`, never "delivered" before a delivery event.
 6. Single-press during recording. Confirm this stops and sends that recording, creates no second
    alert, and extra presses during upload do nothing.
 7. Simulate a signed contact reply. Confirm the exact contact name and reply appear once.
