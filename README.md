@@ -78,6 +78,7 @@ scripts/         ownership map and checker
 - Authentication is a hackathon-grade pairing code exchanged for scoped bearer tokens. It is
   not an audited identity system ([ARCHITECTURE.md § Security model](docs/ARCHITECTURE.md#security-model)).
 
+
 ## Documentation
 
 - [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md): the complete user workflow and the rules the product must follow
