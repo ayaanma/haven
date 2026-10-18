@@ -48,13 +48,10 @@ export function hudContent(model: HudModel): string {
     case "WAITING_FOR_PHOTON":
       return ["Contacting emergency contacts...", ...replies].join("\n");
     case "RECORDING": {
-      const accepted = model.acceptedCount ?? 0;
-      const total = model.totalRecipients ?? accepted;
-      const provider = `Accepted by Photon ${accepted}/${total}`;
+      const total = model.totalRecipients ?? model.acceptedCount ?? 0;
       const delivered = model.deliveredCount ? `Delivered ${model.deliveredCount}/${total}` : null;
       return [
         HUD_COPY.sosSent,
-        provider,
         delivered,
         `${HUD_COPY.recording} ${formatDuration(model.recordingElapsedMs ?? 0)}`,
         HUD_COPY.recordingHint,

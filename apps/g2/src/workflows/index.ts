@@ -231,7 +231,7 @@ export function createHavenWorkflow(
         render();
         break;
       case "recording.notification_accepted":
-        uploadStatus = `Recording sent\nAccepted by Photon ${event.payload.acceptedCount}/${event.payload.totalRecipients}`;
+        uploadStatus = "Recording sent";
         if (currentState === "UPLOADING_AUDIO") transition("ACTIVE_ALERT");
         else render();
         break;
@@ -365,7 +365,7 @@ export function createHavenWorkflow(
     }));
     if (stopped || generation !== expectedGeneration) return;
     if (result.ok) {
-      uploadStatus = `Recording sent\nAccepted by Photon ${result.notification.acceptedCount}/${result.notification.totalRecipients}`;
+      uploadStatus = "Recording sent";
     } else {
       uploadStatus = result.retryable
         ? "Recording failed to send. Retry from the phone.\nAlert remains active."
@@ -474,7 +474,7 @@ export function createHavenWorkflow(
         if (record.recording.status === "completed") {
           currentState = "ACTIVE_ALERT";
           uploadStatus = record.recording.notificationAcceptedCount
-            ? `Recording sent\nAccepted by Photon ${record.recording.notificationAcceptedCount}/${record.totalRecipients}`
+            ? "Recording sent"
             : "Recording uploaded. Contact notification is not yet confirmed.";
           render();
           persist();
