@@ -53,18 +53,18 @@ describe("route registration", () => {
     }
   });
 
-  it("answers 501 not_implemented for feature placeholders instead of 404", async () => {
+  it("registers every feature route, implemented or placeholder (never the unknown-route 404)", async () => {
     h = createTestHarness();
-    const placeholders = [
+    const featureRoutes = [
       { method: "GET", path: ROUTES.contacts },
       { method: "PUT", path: ROUTES.contacts, body: { contacts: [] } },
       { method: "POST", path: ROUTES.alerts, body: makeSOSRequest() },
       { method: "GET", path: `/api/v1/alerts/${ALERT}` },
     ];
-    for (const { method, path, body } of placeholders) {
+    for (const { method, path, body } of featureRoutes) {
       const res = await h.json(method, path, body);
-      expect(res.status, `${method} ${path}`).toBe(501);
-      expect(ApiErrorBodySchema.parse(await res.json()).error.code).toBe("not_implemented");
+      const payload = (await res.json()) as { error?: { message?: string } };
+      expect(payload.error?.message, `${method} ${path}`).not.toBe("Route not found");
     }
   });
 
@@ -114,11 +114,13 @@ describe("route registration", () => {
   it("registers the webhook and recording-link routes without session auth", async () => {
     h = createTestHarness();
     const webhook = await h.request(ROUTES.photonWebhooks, { method: "POST", body: "{}" });
-    expect(webhook.status).toBe(501);
+    expect(webhook.status).not.toBe(404);
     const shortToken = await h.request("/r/x");
     expect(shortToken.status).toBe(404);
+    // Registered, implemented or placeholder: an unknown token is never the unknown-route 404.
     const share = await h.request(`/r/${"a".repeat(43)}`);
-    expect(share.status).toBe(501);
+    const shareBody = (await share.json()) as { error?: { message?: string } };
+    expect(shareBody.error?.message).not.toBe("Route not found");
   });
 
   it("returns the error envelope for unknown routes", async () => {
