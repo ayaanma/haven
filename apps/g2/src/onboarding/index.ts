@@ -5,6 +5,7 @@ import {
   type EmergencyContactInput,
 } from "@haven/contracts";
 import type { HavenAppContext } from "../core/app-context";
+import { HavenApiError } from "../core/http";
 
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -43,6 +44,13 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
 
   const showError = (error: unknown) => {
     status.textContent = error instanceof Error ? error.message : String(error);
+  };
+
+  /** Forget the stored session and go back to the pairing form. */
+  const unpair = async (notice: string) => {
+    await ctx.sessions.clear().catch(() => undefined);
+    renderPairing();
+    status.textContent = notice;
   };
 
   const renderPairing = () => {
@@ -90,6 +98,12 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
     try {
       contacts = (await ctx.api.getContacts()).contacts;
     } catch (error) {
+      if (error instanceof HavenApiError && error.status === 401) {
+        await unpair(
+          "This phone's session ended (the server was reset). Enter the pairing code again.",
+        );
+        return;
+      }
       showError(error);
       const retry = element("button", "Retry");
       retry.addEventListener("click", () => void renderContacts(notice));
@@ -218,7 +232,14 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
       window.dispatchEvent(new Event("haven:reset"));
       status.textContent = "Glasses error reset requested.";
     });
-    root.append(reset);
+    const unpairButton = element("button", "Unpair this phone");
+    unpairButton.type = "button";
+    unpairButton.style.marginTop = "20px";
+    unpairButton.addEventListener(
+      "click",
+      () => void unpair("Unpaired. Enter a pairing code to pair again."),
+    );
+    root.append(reset, unpairButton);
     drawRows();
   };
 
