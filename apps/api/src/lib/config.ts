@@ -1,6 +1,6 @@
 import path from "node:path";
 import { z } from "zod";
-import { HAVEN_LLM_MODEL } from "@haven/contracts";
+import { E164_PATTERN, HAVEN_LLM_MODEL } from "@haven/contracts";
 
 /** The pairing code shipped in .env.example. Live mode refuses to run with it. */
 export const EXAMPLE_PAIRING_CODE = "change-me-pairing-code";
@@ -26,7 +26,10 @@ const EnvSchema = z
     PHOTON_PROJECT_ID: optionalString,
     PHOTON_AGENT_USER_ID: optionalString,
     PHOTON_PLATFORM: z.enum(["imessage", "sms"]).default("imessage"),
+    PHOTON_LINE_MODE: z.enum(["shared", "dedicated"]).default("shared"),
+    PHOTON_LINE_NUMBER: optionalString,
     PHOTON_WEBHOOK_SECRET: optionalString,
+    HAVEN_WEARER_NAME: optionalString,
     LLM_MODE: z.enum(["mock", "live"]).default("mock"),
     LLM_BASE_URL: z.url().default("https://generativelanguage.googleapis.com/v1beta/openai"),
     LLM_API_KEY: optionalString,
@@ -47,10 +50,15 @@ const EnvSchema = z
       if (!env.PHOTON_PROJECT_ID || !/^pho_prj_[0-9a-z]{26}$/.test(env.PHOTON_PROJECT_ID)) {
         issue("PHOTON_PROJECT_ID", "Live mode needs a Photon project ID (pho_prj_...)");
       }
-      if (!env.PHOTON_AGENT_USER_ID || !/^pho_usr_[0-9a-z]{26}$/.test(env.PHOTON_AGENT_USER_ID)) {
+      // A dedicated line sends as one agent. On shared lines each contact is assigned their own
+      // line, and Haven learns that line's agent from the contact's opt-in message.
+      if (
+        env.PHOTON_LINE_MODE === "dedicated" &&
+        (!env.PHOTON_AGENT_USER_ID || !/^pho_usr_[0-9a-z]{26}$/.test(env.PHOTON_AGENT_USER_ID))
+      ) {
         issue(
           "PHOTON_AGENT_USER_ID",
-          "Live mode needs the agent line's Photon User ID (pho_usr_...)",
+          "A dedicated Photon line needs its agent's Photon User ID (pho_usr_...)",
         );
       }
       if (!env.PHOTON_WEBHOOK_SECRET?.startsWith("whsec_")) {
@@ -66,6 +74,15 @@ const EnvSchema = z
         );
       }
     }
+    if (env.PHOTON_LINE_NUMBER && !E164_PATTERN.test(env.PHOTON_LINE_NUMBER)) {
+      issue("PHOTON_LINE_NUMBER", "PHOTON_LINE_NUMBER must be E.164, for example +16283167976");
+    }
+    if (
+      env.HAVEN_WEARER_NAME &&
+      (env.HAVEN_WEARER_NAME.length > 40 || /\p{Cc}/u.test(env.HAVEN_WEARER_NAME))
+    ) {
+      issue("HAVEN_WEARER_NAME", "HAVEN_WEARER_NAME must be at most 40 characters on one line");
+    }
     if (env.LLM_MODE === "live" && !env.LLM_API_KEY) {
       issue("LLM_API_KEY", "LLM_MODE=live needs LLM_API_KEY");
     }
@@ -79,12 +96,18 @@ export interface HavenConfig {
   publicBaseUrl: string;
   allowedOrigins: "*" | string[];
   pairingCode: string;
+  /** Shown to emergency contacts in the SOS ("<name> has activated..."). */
+  wearerName: string | undefined;
   photon: {
     mode: "mock" | "live";
     apiKey: string | undefined;
     projectId: string | undefined;
     agentUserId: string | undefined;
     platform: "imessage" | "sms";
+    /** `shared`: one pooled line per contact (assigned by Photon); `dedicated`: one project line. */
+    lineMode: "shared" | "dedicated";
+    /** The number contacts text to opt in, when every contact uses the same line. */
+    lineNumber: string | undefined;
     webhookSecret: string | undefined;
   };
   llm: {
@@ -126,12 +149,15 @@ export function loadConfig(env: Record<string, string | undefined>, baseDir: str
     publicBaseUrl: e.PUBLIC_BASE_URL.replace(/\/+$/, ""),
     allowedOrigins: origins.length === 0 || origins.includes("*") ? "*" : origins,
     pairingCode: e.HAVEN_PAIRING_CODE,
+    wearerName: e.HAVEN_WEARER_NAME,
     photon: {
       mode: e.PHOTON_MODE,
       apiKey: e.PHOTON_API_KEY,
       projectId: e.PHOTON_PROJECT_ID,
       agentUserId: e.PHOTON_AGENT_USER_ID,
       platform: e.PHOTON_PLATFORM,
+      lineMode: e.PHOTON_LINE_MODE,
+      lineNumber: e.PHOTON_LINE_NUMBER,
       webhookSecret: e.PHOTON_WEBHOOK_SECRET,
     },
     llm: {
@@ -154,6 +180,7 @@ export function describeConfig(config: HavenConfig): Record<string, unknown> {
     photon: {
       mode: config.photon.mode,
       platform: config.photon.platform,
+      lineMode: config.photon.lineMode,
       projectId: config.photon.projectId ?? null,
       credentialsConfigured: Boolean(config.photon.apiKey && config.photon.agentUserId),
       webhookSigningConfigured: Boolean(config.photon.webhookSecret),

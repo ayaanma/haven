@@ -31,6 +31,8 @@ export const PhotonMessageSchema = z.looseObject({
   sentBy: z
     .looseObject({ id: z.string().max(64).optional(), handle: z.string().max(320).optional() })
     .optional(),
+  /** The agent line that received an incoming message. */
+  receivedBy: z.looseObject({ id: z.string().max(64).optional() }).optional(),
   space: z
     .looseObject({
       id: z.string().max(64),

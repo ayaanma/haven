@@ -25,6 +25,8 @@ jobs:
       - run: npm run build
       - name: Package .ehpk (validates app.json with the Even Hub CLI)
         run: npm run pack -w @haven/g2 -- --skip-build
+      - name: Production image builds
+        run: docker build -t haven-api:ci .
       - name: Backend boots in mock mode
         env:
           HAVEN_PAIRING_CODE: ci-pairing-code

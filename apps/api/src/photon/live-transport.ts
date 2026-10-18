@@ -51,14 +51,12 @@ export function createLivePhotonTransport(
   config: HavenConfig,
   options: LivePhotonTransportOptions = {},
 ): PhotonTransport {
-  const { mode, apiKey, projectId, agentUserId, platform } = config.photon;
+  const { mode, apiKey, projectId, agentUserId: defaultAgentUserId, platform } = config.photon;
   if (mode !== "live") {
     throw new Error("The live Photon transport requires PHOTON_MODE=live");
   }
-  if (!apiKey || !projectId || !agentUserId) {
-    throw new Error(
-      "PHOTON_MODE=live needs PHOTON_API_KEY, PHOTON_PROJECT_ID, PHOTON_AGENT_USER_ID",
-    );
+  if (!apiKey || !projectId) {
+    throw new Error("PHOTON_MODE=live needs PHOTON_API_KEY and PHOTON_PROJECT_ID");
   }
 
   let client: Promise<Photon> | null = null;
@@ -86,6 +84,16 @@ export function createLivePhotonTransport(
     async send(message): Promise<SendOutcome> {
       let userId = message.recipient.userId;
       let spaceId = message.recipient.spaceId;
+      const agentUserId = message.recipient.agentUserId ?? defaultAgentUserId ?? null;
+      if (!agentUserId) {
+        // Shared line whose agent is not known yet: the contact has not messaged their line.
+        return {
+          ok: false,
+          retryable: false,
+          failureCode: "sender_unknown",
+          identity: { userId, spaceId },
+        };
+      }
       try {
         const api = await photon();
         if (!userId) {

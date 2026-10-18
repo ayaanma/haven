@@ -165,6 +165,19 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    name: "photon_line_per_contact",
+    sql: `
+      -- Photon shared iMessage lines assign each contact their own pooled line (Agent 2).
+      -- photon_line_number: the number this contact texts to opt in and receives alerts from.
+      -- photon_assignment_id: the shared-line assignment, released when the contact is removed.
+      -- photon_agent_user_id: the line's agent User ID, learned from the contact's own message.
+      ALTER TABLE contacts ADD COLUMN photon_line_number TEXT;
+      ALTER TABLE contacts ADD COLUMN photon_assignment_id TEXT;
+      ALTER TABLE contacts ADD COLUMN photon_agent_user_id TEXT;
+    `,
+  },
 ];
 
 /** Apply pending migrations in order, each in its own transaction. Returns versions applied. */

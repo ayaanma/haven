@@ -158,20 +158,26 @@ export function createWebhookHandler(
       return "ignored";
     }
 
-    // Remember the direct Space with Haven's line so sends can skip the lookups.
+    // Remember who this contact is on Photon and which line they texted: the direct Space,
+    // their User, and the line's agent (on shared lines it differs per contact).
+    const senderId = message.sentBy?.id;
     const participants = message.space?.participantIds ?? [];
+    const others = participants.filter((id) => id !== senderId);
+    const lineAgent =
+      message.receivedBy?.id ??
+      (participants.length === 2 && others.length === 1 ? others[0] : null);
     if (
-      !bySpace &&
       spaceId &&
-      message.sentBy?.id &&
-      agentUserId &&
-      participants.length === 2 &&
-      participants.includes(agentUserId) &&
-      !contact.photon_space_id
+      senderId &&
+      lineAgent &&
+      (contact.photon_space_id !== spaceId ||
+        contact.photon_user_id !== senderId ||
+        contact.photon_agent_user_id !== lineAgent)
     ) {
       cachePhotonIdentity(db, contact.id, contact.phone_number, {
-        userId: message.sentBy.id,
+        userId: senderId,
         spaceId,
+        agentUserId: lineAgent,
       });
     }
 

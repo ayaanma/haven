@@ -58,13 +58,30 @@ describe("loadConfig", () => {
     for (const name of [
       "PHOTON_API_KEY",
       "PHOTON_PROJECT_ID",
-      "PHOTON_AGENT_USER_ID",
       "PHOTON_WEBHOOK_SECRET",
       "PUBLIC_BASE_URL",
       "HAVEN_PAIRING_CODE",
     ]) {
       expect(found).toContain(name);
     }
+  });
+
+  it("needs an agent user ID only for a dedicated line", () => {
+    const { PHOTON_AGENT_USER_ID: _agent, ...shared } = live;
+    expect(loadConfig(shared, "/repo").photon.lineMode).toBe("shared");
+    expect(problems({ ...shared, PHOTON_LINE_MODE: "dedicated" }).join()).toContain(
+      "PHOTON_AGENT_USER_ID",
+    );
+  });
+
+  it("validates the line number and wearer name", () => {
+    expect(problems({ ...base, PHOTON_LINE_NUMBER: "628-316-7976" }).join()).toContain(
+      "PHOTON_LINE_NUMBER",
+    );
+    expect(problems({ ...base, HAVEN_WEARER_NAME: "x".repeat(41) }).join()).toContain(
+      "HAVEN_WEARER_NAME",
+    );
+    expect(loadConfig({ ...base, HAVEN_WEARER_NAME: " Jaden " }, "/repo").wearerName).toBe("Jaden");
   });
 
   it("accepts a complete live configuration and trims the base URL", () => {

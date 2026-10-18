@@ -9,7 +9,8 @@
     "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=../../.env dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
     "build": "node scripts/build.mjs",
-    "test": "vitest run --project api"
+    "test": "vitest run --project api",
+    "photon:webhook": "node --env-file-if-exists=../../.env scripts/photon-webhook.mjs"
   },
   "dependencies": {
     "@haven/contracts": "0.1.0",

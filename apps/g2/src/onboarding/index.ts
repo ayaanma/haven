@@ -100,7 +100,7 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
     root.append(
       element(
         "p",
-        "Each enabled contact must first text Haven's messaging line to opt in. Pending or revoked contacts are never sent an alert.",
+        "Each enabled contact must first text the Haven number shown next to their name to opt in (contacts can be assigned different numbers). Pending or revoked contacts are never sent an alert.",
       ),
     );
 
@@ -155,9 +155,7 @@ export function mountOnboarding(root: HTMLElement, ctx: HavenAppContext | null):
         const consent = element(
           "p",
           persisted
-            ? `Consent: ${persisted.consent.status}${
-                persisted.consent.status === "pending" ? " — ask this contact to text Haven." : ""
-              }`
+            ? consentText(persisted)
             : "Consent: pending after save — this contact must text Haven to opt in.",
         );
         const remove = element("button", "Remove");
@@ -234,4 +232,19 @@ export function mountBridgeUnavailable(root: HTMLElement, message: string): void
   const note = document.createElement("p");
   note.textContent = `Open Haven from the Even Realities app with your G2 connected. (${message})`;
   root.append(title, note);
+}
+
+/** Consent line for a saved contact, naming the exact number they must text to opt in. */
+export function consentText(contact: Pick<EmergencyContact, "consent" | "optInNumber">): string {
+  const target = contact.optInNumber ? `text ${contact.optInNumber}` : "text Haven";
+  switch (contact.consent.status) {
+    case "pending":
+      return `Consent: pending — ask this contact to ${target} to opt in.`;
+    case "revoked":
+      return `Consent: revoked — they opted out. They can ${target} with START to opt back in.`;
+    default:
+      return contact.optInNumber
+        ? `Consent: verified — alerts come from ${contact.optInNumber}.`
+        : "Consent: verified";
+  }
 }

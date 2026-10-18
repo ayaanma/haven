@@ -38,6 +38,13 @@ describe("initial SOS message", () => {
     for (const pattern of FORBIDDEN) expect(text).not.toMatch(pattern);
   });
 
+  it("names the wearer when HAVEN_WEARER_NAME is configured", () => {
+    const text = buildInitialSosMessage({ activatedAt, location: null, wearerName: "Jaden" });
+    expect(text).toContain(
+      "Jaden has activated a Haven emergency alert. They indicated they may be in danger.",
+    );
+  });
+
   it("labels a stale fix as the last known location", () => {
     const text = buildInitialSosMessage({
       activatedAt,

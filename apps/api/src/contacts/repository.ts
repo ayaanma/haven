@@ -17,21 +17,33 @@ export interface ContactRow extends Record<string, unknown> {
   consent_updated_at: number | null;
   photon_user_id: string | null;
   photon_space_id: string | null;
+  photon_agent_user_id: string | null;
+  photon_line_number: string | null;
+  photon_assignment_id: string | null;
   sort_order: number;
   created_at: number;
   updated_at: number;
 }
 
 const COLUMNS = `id, display_name, phone_number, enabled, consent_status, consent_updated_at,
-  photon_user_id, photon_space_id, sort_order, created_at, updated_at`;
+  photon_user_id, photon_space_id, photon_agent_user_id, photon_line_number, photon_assignment_id,
+  sort_order, created_at, updated_at`;
 
-export function toEmergencyContact(row: ContactRow): EmergencyContact {
+/**
+ * `sharedLineNumber` is the number every contact texts when lines are not assigned per
+ * contact (PHOTON_LINE_NUMBER); a per-contact assignment takes precedence.
+ */
+export function toEmergencyContact(
+  row: ContactRow,
+  sharedLineNumber: string | null = null,
+): EmergencyContact {
   return EmergencyContactSchema.parse({
     id: row.id,
     displayName: row.display_name,
     phoneNumber: row.phone_number,
     enabled: row.enabled === 1,
     consent: { status: row.consent_status, updatedAt: row.consent_updated_at },
+    optInNumber: row.photon_line_number ?? sharedLineNumber,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
@@ -95,12 +107,31 @@ export function cachePhotonIdentity(
   db: Db,
   id: string,
   phoneNumber: string,
-  identity: { userId: string | null; spaceId: string | null },
+  identity: { userId: string | null; spaceId: string | null; agentUserId?: string | null },
 ): void {
   db.run(
-    `UPDATE contacts SET photon_user_id = ?, photon_space_id = ? WHERE id = ? AND phone_number = ?`,
+    `UPDATE contacts SET photon_user_id = ?, photon_space_id = ?,
+       photon_agent_user_id = COALESCE(?, photon_agent_user_id)
+     WHERE id = ? AND phone_number = ?`,
     identity.userId,
     identity.spaceId,
+    identity.agentUserId ?? null,
+    id,
+    phoneNumber,
+  );
+}
+
+export function saveLineAssignment(
+  db: Db,
+  id: string,
+  phoneNumber: string,
+  assignment: { lineNumber: string; assignmentId: string },
+): void {
+  db.run(
+    `UPDATE contacts SET photon_line_number = ?, photon_assignment_id = ?
+     WHERE id = ? AND phone_number = ?`,
+    assignment.lineNumber,
+    assignment.assignmentId,
     id,
     phoneNumber,
   );

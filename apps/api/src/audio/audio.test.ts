@@ -119,7 +119,10 @@ describe("emergency audio storage and routes", () => {
       recordingId,
     )!;
     expect(row.duration_ms).toBe(100);
-    expect(statSync(row.storage_path).mode & 0o777).toBe(0o600);
+    // Windows has no POSIX permission bits; the 0600 check applies to Linux/macOS hosts.
+    if (process.platform !== "win32") {
+      expect(statSync(row.storage_path).mode & 0o777).toBe(0o600);
+    }
     expect(fetch).not.toHaveBeenCalled();
     expect(h.container.events.list(alertId).map((e) => e.type)).toEqual([
       "recording.started",
@@ -422,6 +425,8 @@ describe("emergency audio storage and routes", () => {
     await complete();
     const row = h.db.get<{ storage_path: string }>("SELECT storage_path FROM recordings")!;
     rmSync(row.storage_path);
+    // Creating symlinks needs elevated rights on Windows; the guard is exercised on Linux CI.
+    if (process.platform === "win32") return;
     symlinkSync(chunk.storage_path, row.storage_path);
     expect((await h.request(sharePath())).status).toBe(404);
   });
