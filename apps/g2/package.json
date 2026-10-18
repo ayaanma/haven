@@ -1,6 +1,6 @@
 {
   "name": "@haven/g2",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "private": true,
   "description": "Haven Even Hub plugin for the Even Realities G2 glasses.",
   "type": "module",
