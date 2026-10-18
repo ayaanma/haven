@@ -40,6 +40,12 @@ describe("createBlankHud", () => {
     bridge.startUpResult = 1;
     await expect(createBlankHud(bridge)).rejects.toBeInstanceOf(BridgeUnavailableError);
   });
+
+  it("gives up with BridgeUnavailableError when the glasses never answer", async () => {
+    const bridge = new FakeBridge();
+    bridge.createStartUpPageContainer = () => new Promise<never>(() => undefined);
+    await expect(createBlankHud(bridge, 5)).rejects.toThrow(/G2 did not respond/);
+  });
 });
 
 describe("session store", () => {

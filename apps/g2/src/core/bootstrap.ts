@@ -15,6 +15,9 @@ export const HUD_CONTAINER = { id: 1, name: "haven-hud" } as const;
 /** Idle HUD content. A single space draws no pixels; whether an empty string is accepted is firmware-dependent. */
 export const BLANK_HUD_CONTENT = " ";
 
+/** How long the glasses get to accept the startup page before Haven reports it on the phone. */
+export const START_UP_TIMEOUT_MS = 15_000;
+
 const START_UP_RESULT_NAMES: Record<number, string> = {
   1: "invalid parameters",
   2: "oversize",
@@ -46,14 +49,34 @@ export function blankHudPage(): CreateStartUpPageContainer {
  * Create Haven's startup page: one full-canvas, blank, event-capturing text container.
  * Must run exactly once, before any other glasses UI call and before glasses-mic capture.
  */
-export async function createBlankHud(bridge: HavenBridge): Promise<void> {
+export async function createBlankHud(
+  bridge: HavenBridge,
+  timeoutMs = START_UP_TIMEOUT_MS,
+): Promise<void> {
   let result: number;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  // The host never answers while the glasses are disconnected; without a timeout the phone
+  // screen would stay blank.
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new BridgeUnavailableError(
+            `G2 did not respond within ${timeoutMs / 1000} s. Check that the glasses are connected in the Even Realities app, then close and reopen Haven.`,
+          ),
+        ),
+      timeoutMs,
+    );
+  });
   try {
-    result = await bridge.createStartUpPageContainer(blankHudPage());
+    result = await Promise.race([bridge.createStartUpPageContainer(blankHudPage()), timeout]);
   } catch (error) {
+    if (error instanceof BridgeUnavailableError) throw error;
     throw new BridgeUnavailableError(
       `createStartUpPageContainer failed (is this running inside the Even Realities app?): ${String(error)}`,
     );
+  } finally {
+    clearTimeout(timer);
   }
   if (result !== 0) {
     throw new BridgeUnavailableError(
