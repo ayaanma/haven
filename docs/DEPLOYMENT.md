@@ -28,6 +28,14 @@ docker run -d -p 8787:8787 -v haven-data:/data --env-file .env.production haven-
 
 Back up `/data/haven.db` (plus `-wal`) and `/data/recordings` on the host's schedule.
 
+**Render** (current host: `haven-api`, Docker runtime, health check `/healthz`). The Free plan
+has no disk and sleeps after 15 idle minutes; `.github/workflows/keepalive.yml` pings it every
+5 minutes, but a deploy or restart still wipes the database (contacts must be re-added and text
+in again). For real use, switch the instance to Starter and add a 1 GB disk at `/data`, then
+delete the keep-alive workflow. The service deploys from the public repo URL, so pushes do not
+auto-deploy: use **Manual Deploy → Deploy latest commit**, or have the repo owner connect
+Render's GitHub app.
+
 ## 2. Photon 2.0 (Beta)
 
 In https://app.beta.photon.codes for your project:
